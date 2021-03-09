@@ -26,6 +26,10 @@ class AdminQuestionViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Submission.objects.none()
+
         poll = get_object_or_404(
             Poll.objects.prefetch_related('questions', 'questions__options'),
             id=self.kwargs['poll_id']
@@ -65,6 +69,9 @@ class SubmitViewSet(CreateModelMixin, GenericViewSet):
         return context
 
     def _get_poll_or_404(self, kwargs):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Poll.objects.none()
         try:
             now = dt.datetime.now()
             return Poll.objects.prefetch_related(
@@ -82,6 +89,10 @@ class UserSubmissionsViewSet(ListModelMixin, GenericViewSet):
     serializer_class = SubmissionSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Submission.objects.none()
+
         return Submission.objects.prefetch_related(
             'answers', 'answers__selected_options',
             'answers__question', 'answers__question__options'

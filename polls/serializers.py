@@ -22,7 +22,7 @@ class OptionSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    question_type = serializers.ChoiceField(choices=QUESTION_TYPES)
+    question_type = serializers.ChoiceField(choices=QUESTION_TYPES, label='Тип вопроса')
     options = OptionSerializer(many=True, required=False)
 
     class Meta:
