@@ -22,8 +22,7 @@ class OptionSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    question_type = serializers.ChoiceField(
-        choices=QUESTION_TYPES)
+    question_type = serializers.ChoiceField(choices=QUESTION_TYPES)
     options = OptionSerializer(many=True, required=False)
 
     class Meta:
@@ -152,12 +151,6 @@ class AnswerSerializer(serializers.ModelSerializer):
         fields = ['question', 'question_text',
                   'question_type', 'text', 'submission']
 
-    def validate(self, attrs):
-        if self.context['poll'] != attrs['question'].poll:
-            raise serializers.ValidationError(
-                'question demands to other poll')
-        return attrs
-
 
 class TextAnswerSerializer(AnswerSerializer):
     text = serializers.CharField(required=True)
@@ -169,6 +162,13 @@ class OptionsAnswerMixin:
         model = Answer
         exclude = ['text']
 
+    def validate_selected_options(self, value):
+        if not len(value):
+            raise serializers.ValidationError(
+                'Empty select_options not allowed')
+        return value
+
+    @transaction.atomic
     def create(self, validated_data):
         selected_options = validated_data.pop('selected_options')
         Answer.objects.filter(submission=validated_data['submission'],
@@ -190,7 +190,7 @@ class OptionsAnswerMixin:
         answer, question = kwargs['answer'], kwargs['question']
         for option in kwargs['selected_options']:
             s_option = SelectedOptionSerializer(data={
-                                                      'option': option.pk,
+                                                      'option': option,
                                                       'answer': answer
                                                       },
                                                 context={'question': question})
@@ -200,11 +200,17 @@ class OptionsAnswerMixin:
 
 class ChoiceAnswerSerializer(OptionsAnswerMixin, AnswerSerializer):
     selected_options = serializers.PrimaryKeyRelatedField(
-        queryset=Option.objects.all(), required=True, write_only=True)
+        queryset=Option.objects.all(),
+        many=True,
+        required=True,
+        write_only=True)
 
-    class Meta:
-        model = Answer
-        exclude = ['text']
+    def validate_selected_options(self, value):
+        super().validate_selected_options(value)
+        if len(value) != 1:
+            raise serializers.ValidationError(
+                'More than 1 selected option for choice question')
+        return value
 
 
 class MultiplyChoiceAnswerSerializer(OptionsAnswerMixin, AnswerSerializer):
@@ -213,10 +219,6 @@ class MultiplyChoiceAnswerSerializer(OptionsAnswerMixin, AnswerSerializer):
         many=True,
         required=True,
         write_only=True)
-
-    class Meta:
-        model = Answer
-        exclude = ['text']
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -239,15 +241,39 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
         return data
 
+    def validate_answers(self, value):
+        errors = []
+        poll = self.context['poll']
+        poll_questions = set(q['id'] for q in poll.questions.values('id'))
+        raw_sub_questions = [a['question'].id for a in value]
+        sub_questions = set(raw_sub_questions)
+        if len(sub_questions) < len(sub_questions):
+            errors.append(
+                'Duplicate questions in answers')
+        not_answered = poll_questions.difference(sub_questions)
+        for question_id in not_answered:
+            errors.append(
+                f'No answer for question {question_id}')
+        unwanted = sub_questions.difference(poll_questions)
+        for question_id in unwanted:
+            errors.append(
+                f'Unwanted answer for question {question_id}')
+        if errors:
+            raise serializers.ValidationError(errors)
+        return value
+
     @transaction.atomic
     def create(self, validated_data):
+        poll = self.context['poll']
         answers = validated_data.pop('answers')
         Submission.objects.filter(user_id=validated_data['user_id'],
-                                  poll=validated_data['poll']
+                                  poll=poll
                                   ).delete()
-        submission = Submission.objects.create(**validated_data)
+        submission = Submission.objects.create(poll=poll, **validated_data)
         validated_data['answers'] = answers
-        self._create_answers(submission=submission, **validated_data)
+        self._create_answers(submission=submission,
+                             poll=poll,
+                             **validated_data)
         return submission
 
     def _get_answer_serializer(self, q_type):

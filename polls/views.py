@@ -59,9 +59,10 @@ class ActivePollsViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
 class SubmitViewSet(CreateModelMixin, GenericViewSet):
     serializer_class = SubmissionSerializer
 
-    def perform_create(self, serializer):
-        poll = self._get_poll_or_404(self.kwargs)
-        serializer.save(poll=poll)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['poll'] = self._get_poll_or_404(self.kwargs)
+        return context
 
     def _get_poll_or_404(self, kwargs):
         try:
@@ -82,7 +83,8 @@ class UserSubmissionsViewSet(ListModelMixin, GenericViewSet):
 
     def get_queryset(self):
         return Submission.objects.prefetch_related(
-            'answers', 'answers__selected_options'
+            'answers', 'answers__selected_options',
+            'answers__question', 'answers__question__options'
         ).filter(
             user_id=self.kwargs['user_id']
         )
