@@ -23,6 +23,7 @@ class Poll(models.Model):
                 name="Period_check"
             )
         ]
+        ordering = ['-end_date']
 
 
 class Question(models.Model):
@@ -67,6 +68,7 @@ class Submission(models.Model):
 
     class Meta:
         unique_together = ['user_id', 'poll']
+        ordering = ['-date']
 
 
 class Answer(models.Model):
