@@ -58,5 +58,6 @@ python manage.py runserver
 * **/users/{user_id}/submissions** - Просмотр списка отправленнных ответов на опросы пользователя {user_id}
 
 #### Полное описание API
-Полное описание методов и моделей API доступно по адресу https://app.swaggerhub.com/apis/wertigo285/poll_api/v1 .
+Полное описание методов и моделей API доступно по адресу https://app.swaggerhub.com/apis/wertigo285/poll_api/v1 
+
 После запуска приложения интерактивная документация так же доступна по адресу http://127.0.0.1:8000/swagger
