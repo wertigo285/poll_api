@@ -10,16 +10,16 @@ router = SimpleRouter()
 router.register(r'admin/polls',
                 AdminPollViewSet,
                 basename='polls')
-router.register(r'admin/polls/(?P<poll_id>[^/.]+)/questions',
+router.register(r'admin/polls/(?P<poll_id>[^/d]+)/questions',
                 AdminQuestionViewSet,
                 basename='questions')
 router.register(r'polls',
                 ActivePollsViewSet,
                 basename='polls')
-router.register(r'polls/(?P<poll_id>[^/.]+)/submissions',
+router.register(r'polls/(?P<poll_id>[^/d]+)/submissions',
                 SubmitViewSet,
                 basename='submissions')
-router.register(r'users/(?P<user_id>[^/.]+)/submissions',
+router.register(r'users/(?P<user_id>[^/d]+)/submissions',
                 UserSubmissionsViewSet,
                 basename='submissions')
 
