@@ -247,7 +247,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
         poll_questions = set(q['id'] for q in poll.questions.values('id'))
         raw_sub_questions = [a['question'].id for a in value]
         sub_questions = set(raw_sub_questions)
-        if len(sub_questions) < len(sub_questions):
+        if len(sub_questions) < len(raw_sub_questions):
             errors.append(
                 'Duplicate questions in answers')
         not_answered = poll_questions.difference(sub_questions)
