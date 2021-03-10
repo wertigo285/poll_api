@@ -10,11 +10,8 @@
 docker pull skhortyuk/poll_api 
 docker run -it -p 8000:8000 --name poll_api skhortyuk/poll_api
 ```
-При первом запуске необходимо создать и применить миграции, а так же создать супер-пользователя для возможности использования административного функционала.
+При первом запуске необходимо создать супер-пользователя для возможности использования административного функционала.
 ```
-docker exec -it poll_api python manage.py makemigrations
-docker exec -it poll_api python manage.py migrate
-docker exec -it poll_api python manage.py collectstatic
 docker exec -it poll_api python manage.py createsuperuser
 ```
 #### Запуск локально

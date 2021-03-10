@@ -16,6 +16,7 @@ services:
     restart: always
     expose:
       - "8000"
+    cmd: "gunicorn poll_api.wsgi:application --bind 0.0.0.0:8000"
     depends_on:
       - db
     volumes:
